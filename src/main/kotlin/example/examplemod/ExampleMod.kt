@@ -1,6 +1,7 @@
 package example.examplemod
 
 import example.examplemod.block.ModBlocks
+import example.examplemod.entity.ModEntities
 import net.minecraft.client.Minecraft
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent
@@ -17,6 +18,8 @@ import thedarkcolour.kotlinforforge.forge.runForDist
  * in mods.toml.
  *
  * An example for blocks is in the `blocks` package of this mod.
+ * 
+ * This mod includes the Annihilator Energy Cannon - an improved version with rapid-fire capabilities.
  */
 @Mod(ExampleMod.ID)
 object ExampleMod {
@@ -30,6 +33,7 @@ object ExampleMod {
 
         // Register the KDeferredRegister to the mod-specific event bus
         ModBlocks.REGISTRY.register(MOD_BUS)
+        ModEntities.REGISTRY.register(MOD_BUS)
 
         val obj = runForDist(
             clientTarget = {
