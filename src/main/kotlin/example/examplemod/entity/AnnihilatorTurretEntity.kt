@@ -4,15 +4,22 @@ import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.syncher.EntityDataAccessor
 import net.minecraft.network.syncher.EntityDataSerializers
 import net.minecraft.network.syncher.SynchedEntityData
-import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.level.Level
 import net.minecraft.world.phys.Vec3
 
 /**
- * Annihilator Turret Entity - Stationary energy cannon with rapid-fire capabilities
- * Based on SuperbWarfare's GunShootGoal rapid-fire system
+ * Annihilator Turret Entity - Improved Annihilator Energy Cannon
+ * 
+ * This is an improvement to the Annihilator Energy Cannon with rapid-fire capabilities.
+ * Based on SuperbWarfare's GunShootGoal rapid-fire system, adapted for stationary turret use.
+ * 
+ * Features:
+ * - Continuous energy regeneration
+ * - Rapid-fire shooting (configurable fire rate)
+ * - Energy-based ammo system
+ * - Targeting system with spread mechanics
  */
 class AnnihilatorTurretEntity(type: EntityType<out AnnihilatorTurretEntity>, world: Level) : Entity(type, world) {
     
@@ -23,7 +30,7 @@ class AnnihilatorTurretEntity(type: EntityType<out AnnihilatorTurretEntity>, wor
     private var energy by ENERGY
     private var maxEnergy by MAX_ENERGY
     
-    // Rapid-fire timing
+    // Rapid-fire timing (from SuperbWarfare's GunShootGoal)
     private var shootTimer: Long = 0
     private var lastFireTime: Long = 0
     
@@ -32,9 +39,10 @@ class AnnihilatorTurretEntity(type: EntityType<out AnnihilatorTurretEntity>, wor
     private var targetY by TARGET_Y
     private var targetZ by TARGET_Z
     
-    // Configuration (from SuperbWarfare's RPM system)
-    var fireRate: Double = 10.0  // Rounds per second (like RPM / 60)
+    // Configuration (converted from RPM system to RPS - Rounds Per Second)
+    var fireRate: Double = 10.0  // Rounds per second (equivalent to RPM / 60)
     var spreadAmount: Float = 2.0f  // Spread in degrees
+    var energyPerShot: Int = 5  // Energy cost per shot
     
     init {
         this.noPhysics = true
@@ -56,6 +64,7 @@ class AnnihilatorTurretEntity(type: EntityType<out AnnihilatorTurretEntity>, wor
         compound.putDouble("TargetZ", this.targetZ)
         compound.putDouble("FireRate", this.fireRate)
         compound.putFloat("Spread", this.spreadAmount)
+        compound.putInt("EnergyPerShot", this.energyPerShot)
     }
     
     override fun readAdditionalSaveData(compound: CompoundTag) {
@@ -66,6 +75,7 @@ class AnnihilatorTurretEntity(type: EntityType<out AnnihilatorTurretEntity>, wor
         if (compound.contains("TargetZ")) this.targetZ = compound.getDouble("TargetZ")
         if (compound.contains("FireRate")) this.fireRate = compound.getDouble("FireRate")
         if (compound.contains("Spread")) this.spreadAmount = compound.getFloat("Spread")
+        if (compound.contains("EnergyPerShot")) this.energyPerShot = compound.getInt("EnergyPerShot")
     }
     
     override fun tick() {
@@ -77,8 +87,8 @@ class AnnihilatorTurretEntity(type: EntityType<out AnnihilatorTurretEntity>, wor
                 this.energy = Math.min(this.energy + 1, this.maxEnergy)
             }
             
-            // Rapid-fire logic (from SuperbWarfare's GunShootGoal)
-            if (this.isFiring && this.energy > 0) {
+            // Rapid-fire logic (adapted from SuperbWarfare's GunShootGoal)
+            if (this.isFiring && this.energy > this.energyPerShot) {
                 performRapidFire()
             }
         }
@@ -87,11 +97,17 @@ class AnnihilatorTurretEntity(type: EntityType<out AnnihilatorTurretEntity>, wor
     /**
      * Rapid-fire shooting logic adapted from SuperbWarfare's GunShootGoal
      * Uses shootTimer with cooldown based on fireRate (RPS - Rounds Per Second)
+     * 
+     * Original GunShootGoal implementation:
+     * - double rps = (double) gunData.get(GunProp.RPM) / 60;
+     * - long cooldown = Math.round(1000 / rps);
+     * - Fires on every tick if cooldown is met
      */
     private fun performRapidFire() {
         val currentTime = System.currentTimeMillis()
         
         // Calculate cooldown in milliseconds (inverse of fireRate)
+        // This converts RPS to milliseconds between shots
         val cooldownMs = (1000.0 / this.fireRate).toLong()
         
         // Initialize timer on first fire
@@ -106,13 +122,15 @@ class AnnihilatorTurretEntity(type: EntityType<out AnnihilatorTurretEntity>, wor
             this.lastFireTime = currentTime
             
             // Consume energy
-            this.energy = Math.max(0, this.energy - 5)
+            this.energy = Math.max(0, this.energy - this.energyPerShot)
         }
     }
     
     /**
      * Fire a single shot
-     * Creates a projectile/beam towards target position
+     * Creates a projectile/energy beam towards target position
+     * 
+     * TODO: Implement actual projectile spawning with spread mechanics
      */
     private fun fireShot() {
         if (this.level().isClientSide) return
@@ -123,9 +141,11 @@ class AnnihilatorTurretEntity(type: EntityType<out AnnihilatorTurretEntity>, wor
         // Calculate direction
         val direction = targetVec.subtract(turretPos).normalize()
         
-        // TODO: Create projectile/energy beam here
-        // For now, just spawn particle effect or sound
-        // this.level().playSound(null, this.blockPosition(), SoundEvents.ARROW_SHOOT, SoundSource.BLOCKS, 1.0f, 1.0f)
+        // Apply spread (TODO: random spread mechanics)
+        // val spreadRad = Math.toRadians(this.spreadAmount.toDouble())
+        
+        // TODO: Create projectile/energy beam entity here
+        // Example: spawn energy projectile with calculated direction and spread
     }
     
     /**
@@ -153,6 +173,16 @@ class AnnihilatorTurretEntity(type: EntityType<out AnnihilatorTurretEntity>, wor
      * Get max energy capacity
      */
     fun getMaxEnergy(): Int = this.maxEnergy
+    
+    /**
+     * Start/stop firing
+     */
+    fun setFiring(firing: Boolean) {
+        this.isFiring = firing
+        if (!firing) {
+            this.shootTimer = 0L
+        }
+    }
     
     override fun shouldRenderAtSqrDistance(distance: Double): Boolean = distance < 16384.0
 
