@@ -92,15 +92,6 @@ minecraft {
 sourceSets.main.resources { srcDirs 'src/generated/resources/' }
 
 repositories {
-
-    maven {
-        name = 'CurseMaven'
-        url = 'https://cursemaven.com/'
-        content {
-            includeGroup 'curse.maven'
-        }
-    }
-
     maven {
         name = 'Kotlin for Forge'
         url = 'https://thedarkcolour.github.io/KotlinForForge/'
@@ -109,9 +100,6 @@ repositories {
 }
 
 dependencies {
-
-    implementation fg.deobf("curse.maven:superb-warfare-1218165:8104849")
-
     // Use the latest version of Minecraft Forge
     minecraft "net.minecraftforge:forge:$minecraft_version-$forge_version"
 
